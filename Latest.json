@@ -1,0 +1,170 @@
+package samplePackage;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class LatestMerging {
+	public static void main(String args[]) {
+		String file1Path = System.getProperty("user.dir") + "\\target\\1.json";
+		String file2Path = System.getProperty("user.dir") + "\\target\\2.json";
+		String outputPath = System.getProperty("user.dir") + "\\target\\modified_file1.json";
+		try {
+			JSONArray jsonArray1 = readJsonFile(file1Path);
+			JSONArray jsonArray2 = readJsonFile(file2Path);
+
+			Set<JSONObject> set1 = jsonArrayToSet(jsonArray1);
+			Set<JSONObject> set2 = jsonArrayToSet(jsonArray2);
+
+			Iterator<JSONObject> iterator2 = set2.iterator();
+
+			// JSONArray newJsonAyyray=iterator2.next().getJSONArray("elements");
+
+			Set<String> namesInFile1 = new HashSet<>();
+
+			for (JSONObject obj2 : set2) {
+
+				JSONObject jsonObject2 = iterator2.next();
+
+				JSONArray customJsonArray2 = jsonObject2.getJSONArray("elements");
+
+				Set<JSONObject> customSet2 = jsonArrayToSet(customJsonArray2);
+
+				Iterator<JSONObject> customIterator2 = customSet2.iterator();
+
+				for (int j = 1; j < customJsonArray2.length(); j += 2) {
+
+					customIterator2.next();
+
+					namesInFile1.add(customJsonArray2.getJSONObject(j).getString("name") + "-" + j);
+
+					String status2 = obj2.getJSONArray("elements").optJSONObject(j).optJSONArray("after")
+							.getJSONObject(0).getJSONObject("result").optString("status");
+					String lineNo2 = obj2.getJSONArray("elements").getJSONObject(j).optString("line");
+					String failedtestCase = obj2.getJSONArray("elements").getJSONObject(j).optString("name");
+
+					System.out.println(
+							"Rerun-Test Status: " + status2 + " Line No: " + lineNo2 + " Name: " + failedtestCase);
+					
+					failedtestCase = obj2.getJSONArray("elements").getJSONObject(j).optString("name").concat(lineNo2);
+
+					Iterator<JSONObject> iterator = set1.iterator();
+
+					for (JSONObject obj : set1) {
+
+						JSONObject jsonObject = iterator.next();
+
+						JSONArray customJsonArray = jsonObject.getJSONArray("elements");
+
+						Set<JSONObject> customSet = jsonArrayToSet(customJsonArray);
+
+						System.out.println("customSet size in for: "+customSet.size());
+						
+						Iterator<JSONObject> customIterator = customSet.iterator();
+						
+						for (int i = 1; i < customJsonArray.length(); i += 2) {
+
+							JSONObject insideJsonObject=customIterator.next();
+
+							String status = obj.getJSONArray("elements").optJSONObject(i).optJSONArray("after")
+									.getJSONObject(0).getJSONObject("result").optString("status");
+
+							String lineNo = obj.getJSONArray("elements").getJSONObject(i).optString("line");
+
+							String testCase = obj.getJSONArray("elements").getJSONObject(i).optString("name");
+
+							System.out.println("Test Status: " + status + " Line No: " + lineNo + " Name: " + testCase);
+							
+							testCase = obj.getJSONArray("elements").getJSONObject(i).optString("name").concat(lineNo);
+
+							if (failedtestCase.equalsIgnoreCase(testCase)) {
+								System.out.println("Removed Test Case: " + testCase);
+								System.out.println("failedtestCase: " + failedtestCase);
+								System.out.println("Removing JSON Object from First JSON ");
+								customIterator.remove();
+								customSet.add(insideJsonObject);
+								System.out.println("customSet size in If: "+i+" "+customSet.size());
+								break;
+
+							}
+						}
+					}
+				}
+			}
+
+			System.out.println("namesInFile1: " + namesInFile1.size());
+
+			// Getting a Size after remove
+
+			Iterator<JSONObject> iterator = set1.iterator();
+
+			for (JSONObject obj : set1) {
+
+				JSONObject jsonObject = iterator.next();
+
+				JSONArray customJsonArray = jsonObject.getJSONArray("elements");
+
+				System.out.println("Overall remaining Value" + customJsonArray.length());
+
+				Set<JSONObject> customSet = jsonArrayToSet(customJsonArray);
+
+				Iterator<JSONObject> customIterator = customSet.iterator();
+				for (int i = 0; i < customJsonArray.length(); i++) {
+
+					customIterator.next();
+
+					if (!(i % 2 == 0 || i == 0)) {
+
+						String status = obj.getJSONArray("elements").optJSONObject(i).optJSONArray("after")
+								.getJSONObject(0).getJSONObject("result").optString("status");
+
+						String lineNo = obj.getJSONArray("elements").getJSONObject(i).optString("line");
+
+						String testCase = obj.getJSONArray("elements").getJSONObject(i).optString("name");
+
+						System.out.println("Test Status: " + status + " Line No: " + lineNo + " Name: " + testCase);
+					}
+				}
+			}
+
+			System.out.println("Filtered JSON file has been created at: " + outputPath);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static JSONArray readJsonFile(String filePath) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(filePath));
+		StringBuilder stringBuilder = new StringBuilder();
+		String line;
+		while ((line = reader.readLine()) != null) {
+			stringBuilder.append(line);
+		}
+		reader.close();
+		return new JSONArray(stringBuilder.toString());
+	}
+
+	private static void writeJsonFile(String filePath, JSONArray jsonArray) throws IOException {
+		FileWriter fileWriter = new FileWriter(filePath);
+		fileWriter.write(jsonArray.toString(4)); // Pretty print with 4 space indentation
+		fileWriter.close();
+	}
+
+	// Function to convert JSONArray to Set of JSONObjects
+	public static Set<JSONObject> jsonArrayToSet(JSONArray jsonArray) {
+		Set<JSONObject> set = new HashSet<>();
+		for (int i = 0; i < jsonArray.length(); i++) {
+			set.add(jsonArray.getJSONObject(i));
+		}
+		return set;
+	}
+
+}
