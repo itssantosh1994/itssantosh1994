@@ -1,0 +1,1 @@
+clean test -Dcucumber.filter.tags="@32861_1 or @32575_1" -Denvironment="qa"
